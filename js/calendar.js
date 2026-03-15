@@ -521,8 +521,13 @@
 
   function getIcsUrl() {
     // Build the full URL to calendar.ics based on current page location
-    const base = window.location.href.replace(/\/[^/]*$/, "");
-    return `${base}/calendar.ics`;
+    const loc = window.location;
+    let base = loc.origin + loc.pathname;
+    // Remove trailing filename (e.g. index.html) but keep directory
+    base = base.replace(/\/[^/]*\.[^/]*$/, "");
+    // Ensure trailing slash
+    if (!base.endsWith("/")) base += "/";
+    return `${base}calendar.ics`;
   }
 
   function openSubscribeModal() {
