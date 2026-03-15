@@ -1,0 +1,58 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//pbb8 Speedrun Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:pbb8's Speedrun Calendar
+X-WR-CALDESC:Upcoming speedrun marathon runs by pbb8
+REFRESH-INTERVAL;VALUE=DURATION:PT1H
+X-PUBLISHED-TTL:PT1H
+BEGIN:VEVENT
+UID:run-51011@speedruncalendar
+DTSTART:20260315T152500Z
+DTEND:20260315T155500Z
+SUMMARY:Ollie-Oop — Gamers Against Cancer 2026
+DESCRIPTION:Watch at: https://twitch.tv/GFHMarathon\nSchedule: https://oengus.io/marathon/GAC26/schedule/gac26
+URL:https://twitch.tv/GFHMarathon
+END:VEVENT
+BEGIN:VEVENT
+UID:run-50869@speedruncalendar
+DTSTART:20260322T145500Z
+DTEND:20260322T153000Z
+SUMMARY:Ollie-Oop — InstaSpeedathon 2026
+DESCRIPTION:Watch at: https://twitch.tv/InstaSpeedathon\nSchedule: https://oengus.io/marathon/ispeed26/schedule/main
+URL:https://twitch.tv/InstaSpeedathon
+END:VEVENT
+BEGIN:VEVENT
+UID:run-50876@speedruncalendar
+DTSTART:20260322T154500Z
+DTEND:20260322T161000Z
+SUMMARY:Bad Way — InstaSpeedathon 2026
+DESCRIPTION:Watch at: https://twitch.tv/InstaSpeedathon\nSchedule: https://oengus.io/marathon/ispeed26/schedule/main
+URL:https://twitch.tv/InstaSpeedathon
+END:VEVENT
+BEGIN:VEVENT
+UID:run-sftf2026-ollie-oop@speedruncalendar
+DTSTART:20260329T192000Z
+DTEND:20260329T195500Z
+SUMMARY:Ollie-Oop — Starlight for the Future 2026
+DESCRIPTION:Watch at: https://twitch.tv/supersonic_\nSchedule: https://horaro.net/sftf2026/schedule
+URL:https://twitch.tv/supersonic_
+END:VEVENT
+BEGIN:VEVENT
+UID:run-sftf2026-bad-way@speedruncalendar
+DTSTART:20260329T200500Z
+DTEND:20260329T203000Z
+SUMMARY:Bad Way — Starlight for the Future 2026
+DESCRIPTION:Watch at: https://twitch.tv/supersonic_\nSchedule: https://horaro.net/sftf2026/schedule
+URL:https://twitch.tv/supersonic_
+END:VEVENT
+BEGIN:VEVENT
+UID:run-51375@speedruncalendar
+DTSTART:20260412T142500Z
+DTEND:20260412T150000Z
+SUMMARY:Ollie-Oop — No Fish 2026
+DESCRIPTION:Watch at: https://twitch.tv/Channel734\nSchedule: https://oengus.io/marathon/nofish2026/schedule/1
+URL:https://twitch.tv/Channel734
+END:VEVENT
+END:VCALENDAR

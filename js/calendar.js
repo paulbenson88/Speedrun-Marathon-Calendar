@@ -1,0 +1,660 @@
+/**
+ * calendar.js — Renders a monthly calendar and upcoming-events list.
+ * All UTC event times are displayed in the viewer's local timezone.
+ */
+
+(function () {
+  "use strict";
+
+  /* ── Helpers ──────────────────────────────────────── */
+
+  const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  /** Format a Date to a human-friendly local string. */
+  function fmtDate(date) {
+    return date.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
+  function fmtTime(date) {
+    return date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  }
+
+  function fmtShortDate(date) {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  /** Parse an ISO-8601 duration (e.g. PT1H35M) to a human string. */
+  function fmtEstimate(iso) {
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return iso;
+    const parts = [];
+    if (m[1]) parts.push(`${m[1]}h`);
+    if (m[2]) parts.push(`${m[2]}m`);
+    if (m[3]) parts.push(`${m[3]}s`);
+    return parts.join(" ") || "0m";
+  }
+
+  /** Build a unique key for a run's commentator tracking. */
+  function runCommentatorKey(marathonName, run) {
+    return `${marathonName} | ${run.game} - ${run.category}`;
+  }
+
+  /** Return "YYYY-MM-DD" in local time for a Date. */
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  /** Check if two local dates are the same calendar day. */
+  function sameDay(a, b) {
+    return dateKey(a) === dateKey(b);
+  }
+
+  /* ── Parse Events ─────────────────────────────────── */
+
+  /** Build a Map<"YYYY-MM-DD", Event[]> keyed by each day the user has a run. */
+  function buildEventMap(events) {
+    const map = new Map();
+    for (const ev of events) {
+      const start = new Date(ev.start);
+      const end = new Date(ev.end);
+      const runs = ev.runs || [];
+      if (runs.length === 0) continue;
+      for (const run of runs) {
+        const runDate = new Date(run.date);
+        const key = dateKey(runDate);
+        if (!map.has(key)) map.set(key, []);
+        // Avoid adding the same marathon twice on the same day
+        if (!map.get(key).some(e => e.name === ev.name)) {
+          map.get(key).push({ ...ev, _start: start, _end: end });
+        }
+      }
+    }
+    return map;
+  }
+
+  const eventMap = buildEventMap(MARATHON_EVENTS);
+
+  /* ── DOM References ───────────────────────────────── */
+  const grid = document.getElementById("calendar-grid");
+  const monthTitle = document.getElementById("month-title");
+  const prevBtn = document.getElementById("prev-month");
+  const nextBtn = document.getElementById("next-month");
+  const detailSection = document.getElementById("event-details");
+  const detailDate = document.getElementById("detail-date");
+  const detailList = document.getElementById("detail-list");
+  const upcomingList = document.getElementById("upcoming-list");
+  const tzLabel = document.getElementById("tz-label");
+
+  /* ── State ────────────────────────────────────────── */
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-indexed
+
+  /* ── Render Calendar ──────────────────────────────── */
+
+  function renderMonth() {
+    // Clear old day cells (keep the 7 header divs)
+    const headers = grid.querySelectorAll(".day-header");
+    grid.innerHTML = "";
+    headers.forEach((h) => grid.appendChild(h));
+
+    const monthNames = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December",
+    ];
+    monthTitle.textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    // Leading empties
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement("div");
+      cell.className = "day-cell empty";
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(viewYear, viewMonth, d);
+      const key = dateKey(cellDate);
+      const events = eventMap.get(key) || [];
+
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      if (sameDay(cellDate, today)) cell.classList.add("today");
+      if (events.length) cell.classList.add("has-event");
+
+      const num = document.createElement("span");
+      num.className = "day-number";
+      num.textContent = d;
+      cell.appendChild(num);
+
+      // Show up to 2 event labels
+      events.slice(0, 2).forEach((ev) => {
+        const lbl = document.createElement("span");
+        lbl.className = "event-label";
+        lbl.innerHTML = `<span class="event-dot"></span>${ev.name}`;
+        cell.appendChild(lbl);
+      });
+      if (events.length > 2) {
+        const more = document.createElement("span");
+        more.className = "event-label";
+        more.textContent = `+${events.length - 2} more`;
+        cell.appendChild(more);
+      }
+
+      // Click to show details
+      if (events.length) {
+        cell.addEventListener("click", () => showDetails(cellDate, events));
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  /* ── Show Detail Panel ────────────────────────────── */
+
+  function showDetails(date, events) {
+    detailDate.textContent = fmtDate(date);
+    detailList.innerHTML = "";
+    for (const ev of events) {
+      // Marathon header
+      const marathonLi = document.createElement("li");
+      marathonLi.className = "marathon-header-item";
+      const evIdx = MARATHON_EVENTS.indexOf(ev) !== -1 ? MARATHON_EVENTS.indexOf(ev)
+        : MARATHON_EVENTS.findIndex(e => e.name === ev.name);
+      marathonLi.className = "marathon-header-item";
+
+      let marathonHTML = `
+        <span class="event-name">${ev.name}</span>
+        ${ev.twitch ? `<a class="twitch-link" href="https://twitch.tv/${ev.twitch}" target="_blank" rel="noopener"><span class="twitch-icon">&#9656;</span> twitch.tv/${ev.twitch}</a>` : ""}
+        ${ev.url ? `<a class="schedule-link" href="${ev.url}" target="_blank" rel="noopener">📋 Full Schedule</a>` : ""}
+      `;
+
+      // Show individual runs if they exist
+      const runs = ev.runs || [];
+      if (runs.length > 0) {
+        marathonHTML += `<div class="runs-section">`;
+        for (const run of runs) {
+          const runDate = new Date(run.date);
+          const commKey = runCommentatorKey(ev.name, run);
+          const comms = CommentatorManager.getForEvent(commKey);
+          const confirmedCount = comms.filter(c => c.status === "confirmed").length;
+          const totalCount = comms.length;
+          const badgeText = totalCount > 0
+            ? `${confirmedCount}/${totalCount} confirmed`
+            : "No commentators";
+          const badgeClass = totalCount > 0 && confirmedCount === totalCount
+            ? "badge-complete" : totalCount > 0 ? "badge-partial" : "badge-empty";
+
+          marathonHTML += `
+            <div class="run-card">
+              <div class="run-info">
+                <span class="run-game">${run.game}</span>
+                <span class="run-time">${fmtShortDate(runDate)} ${fmtTime(runDate)} <span class="tz-note">(shown in your local timezone)</span></span>
+              </div>
+              <div class="run-actions">
+                <button class="add-to-cal-btn" data-ev-idx="${evIdx}" data-run-idx="${runs.indexOf(run)}">📅</button>
+                <button class="commentator-btn ${badgeClass}" data-event="${commKey}">🎙️ Commentators <span class="comm-badge">${badgeText}</span></button>
+              </div>
+            </div>
+          `;
+        }
+        marathonHTML += `</div>`;
+      }
+
+      marathonLi.innerHTML = marathonHTML;
+      detailList.appendChild(marathonLi);
+    }
+    detailSection.classList.remove("hidden");
+    detailSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ── Commentator Modal ───────────────────────────── */
+
+  const modal = document.getElementById("commentator-modal");
+  const modalTitle = document.getElementById("modal-event-title");
+  const modalCloseBtn = document.getElementById("modal-close");
+  const commInput = document.getElementById("commentator-name-input");
+  const commAddBtn = document.getElementById("commentator-add-btn");
+  const commList = document.getElementById("commentator-list");
+  const commEmpty = document.getElementById("commentator-empty");
+  let currentModalEvent = null;
+
+  /** Render the commentator list inside the modal. */
+  function renderCommentatorList() {
+    const comms = CommentatorManager.getForEvent(currentModalEvent);
+    commList.innerHTML = "";
+    commEmpty.classList.toggle("hidden", comms.length > 0);
+
+    for (const c of comms) {
+      const info = CommentatorManager.STATUSES[c.status];
+      const li = document.createElement("li");
+      li.className = `commentator-item ${info.className}`;
+      li.innerHTML = `
+        <span class="comm-icon">${info.icon}</span>
+        <span class="comm-name">${c.name}</span>
+        <select class="comm-status-select" data-name="${c.name}">
+          ${Object.entries(CommentatorManager.STATUSES).map(([key, val]) =>
+            `<option value="${key}"${key === c.status ? " selected" : ""}>${val.label}</option>`
+          ).join("")}
+        </select>
+        <button class="comm-remove-btn" data-name="${c.name}" title="Remove">🗑️</button>
+      `;
+      commList.appendChild(li);
+    }
+  }
+
+  function openCommentatorModal(eventName) {
+    currentModalEvent = eventName;
+    modalTitle.textContent = eventName;
+    commInput.value = "";
+    renderCommentatorList();
+    modal.classList.remove("hidden");
+    commInput.focus();
+  }
+
+  function closeCommentatorModal() {
+    modal.classList.add("hidden");
+    currentModalEvent = null;
+    // Re-render the detail panel to update badges
+    if (!detailSection.classList.contains("hidden")) {
+      const dateText = detailDate.textContent;
+      // Refresh upcoming list too
+      renderUpcoming();
+    }
+  }
+
+  // Event delegation for commentator buttons in detail panel
+  detailList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".commentator-btn");
+    if (btn) openCommentatorModal(btn.dataset.event);
+  });
+
+  // Event delegation for commentator buttons in upcoming list
+  upcomingList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".commentator-btn");
+    if (btn) openCommentatorModal(btn.dataset.event);
+  });
+
+  // Modal close
+  modalCloseBtn.addEventListener("click", closeCommentatorModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeCommentatorModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) closeCommentatorModal();
+  });
+
+  // Add commentator
+  function addCommentator() {
+    const name = commInput.value.trim();
+    if (!name) return;
+    const added = CommentatorManager.add(currentModalEvent, name);
+    if (!added) {
+      commInput.classList.add("input-error");
+      setTimeout(() => commInput.classList.remove("input-error"), 600);
+      return;
+    }
+    commInput.value = "";
+    renderCommentatorList();
+    commInput.focus();
+  }
+
+  commAddBtn.addEventListener("click", addCommentator);
+  commInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addCommentator();
+  });
+
+  // Status change & remove via delegation
+  commList.addEventListener("change", (e) => {
+    if (e.target.classList.contains("comm-status-select")) {
+      CommentatorManager.setStatus(currentModalEvent, e.target.dataset.name, e.target.value);
+      renderCommentatorList();
+    }
+  });
+
+  commList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".comm-remove-btn");
+    if (btn) {
+      CommentatorManager.remove(currentModalEvent, btn.dataset.name);
+      renderCommentatorList();
+    }
+  });
+
+  /* ── Upcoming List ────────────────────────────────── */
+
+  function renderUpcoming() {
+    const now = new Date();
+    const upcoming = MARATHON_EVENTS
+      .filter((ev) => new Date(ev.end) >= now)
+      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .slice(0, 6);
+
+    upcomingList.innerHTML = "";
+    if (upcoming.length === 0) {
+      upcomingList.innerHTML = "<li>No upcoming marathons — check back later!</li>";
+      return;
+    }
+
+    for (const ev of upcoming) {
+      const start = new Date(ev.start);
+      const end = new Date(ev.end);
+      const li = document.createElement("li");
+      const evIdx = MARATHON_EVENTS.indexOf(ev);
+
+      let runsHTML = "";
+      const runs = ev.runs || [];
+      for (const run of runs) {
+        const runDate = new Date(run.date);
+        const commKey = runCommentatorKey(ev.name, run);
+        const comms = CommentatorManager.getForEvent(commKey);
+        const confirmedCount = comms.filter(c => c.status === "confirmed").length;
+        const totalCount = comms.length;
+        const badgeText = totalCount > 0
+          ? `${confirmedCount}/${totalCount} confirmed`
+          : "No commentators";
+        const badgeClass = totalCount > 0 && confirmedCount === totalCount
+          ? "badge-complete" : totalCount > 0 ? "badge-partial" : "badge-empty";
+
+        runsHTML += `
+          <div class="run-card">
+            <div class="run-info">
+              <span class="run-game">${run.game}</span>
+              <span class="run-time">${fmtShortDate(runDate)} ${fmtTime(runDate)} <span class="tz-note">(shown in your local timezone)</span></span>
+            </div>
+            <div class="run-actions">
+              <button class="add-to-cal-btn" data-ev-idx="${evIdx}" data-run-idx="${runs.indexOf(run)}">📅</button>
+              <button class="commentator-btn ${badgeClass}" data-event="${commKey}">🎙️ <span class="comm-badge">${badgeText}</span></button>
+            </div>
+          </div>
+        `;
+      }
+
+      li.innerHTML = `
+        <span class="event-name">${ev.name}</span>
+        ${ev.twitch ? `<a class="twitch-link" href="https://twitch.tv/${ev.twitch}" target="_blank" rel="noopener"><span class="twitch-icon">&#9656;</span> twitch.tv/${ev.twitch}</a>` : ""}
+        ${ev.url ? `<a class="schedule-link" href="${ev.url}" target="_blank" rel="noopener">📋 Full Schedule</a>` : ""}
+        ${runsHTML ? `<div class="runs-section">${runsHTML}</div>` : ""}
+      `;
+      upcomingList.appendChild(li);
+    }
+  }
+
+  /* ── Navigation ───────────────────────────────────── */
+
+  prevBtn.addEventListener("click", () => {
+    viewMonth--;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    detailSection.classList.add("hidden");
+    renderMonth();
+  });
+
+  nextBtn.addEventListener("click", () => {
+    viewMonth++;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    detailSection.classList.add("hidden");
+    renderMonth();
+  });
+
+  /* ── Export .ics ──────────────────────────────────── */
+
+  /** Pad a number to 2 digits. */
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  /** Format a Date as an iCalendar UTC timestamp (YYYYMMDDTHHMMSSZ). */
+  function icsTimestamp(d) {
+    return d.getUTCFullYear()
+      + pad2(d.getUTCMonth() + 1)
+      + pad2(d.getUTCDate()) + "T"
+      + pad2(d.getUTCHours())
+      + pad2(d.getUTCMinutes())
+      + pad2(d.getUTCSeconds()) + "Z";
+  }
+
+  /** Parse ISO-8601 duration to milliseconds. */
+  function durationMs(iso) {
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return 0;
+    return ((+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0)) * 1000;
+  }
+
+  function exportICS() {
+    let cal = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//SpeedrunCalendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+
+    for (const ev of MARATHON_EVENTS) {
+      const runs = ev.runs || [];
+      for (const run of runs) {
+        const start = new Date(run.date);
+        const end = new Date(start.getTime() + durationMs(run.estimate));
+        const uid = `run-${run.runId}@speedruncalendar`;
+        cal.push(
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `DTSTART:${icsTimestamp(start)}`,
+          `DTEND:${icsTimestamp(end)}`,
+          `SUMMARY:${run.game} - ${run.category}`,
+          `DESCRIPTION:${ev.name}\\n${run.category} (${run.console})\\nEstimate: ${fmtEstimate(run.estimate)}`,
+          `LOCATION:${ev.url || ""}`,
+          "END:VEVENT",
+        );
+      }
+    }
+
+    cal.push("END:VCALENDAR");
+
+    const blob = new Blob([cal.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "speedrun-runs.ics";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  /** Generate a single-run .ics blob URL and trigger download. */
+  function exportSingleRunICS(ev, run) {
+    const start = new Date(run.date);
+    const end = new Date(start.getTime() + durationMs(run.estimate));
+    const uid = `run-${run.runId}@speedruncalendar`;
+    const twitchUrl = ev.twitch ? `https://twitch.tv/${ev.twitch}` : "";
+    const cal = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//SpeedrunCalendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTART:${icsTimestamp(start)}`,
+      `DTEND:${icsTimestamp(end)}`,
+      `SUMMARY:${run.game} — ${ev.name}`,
+      `DESCRIPTION:${ev.name}\\nWatch at: ${twitchUrl}`,
+      `URL:${twitchUrl}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ];
+    const blob = new Blob([cal.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${run.game.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.ics`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // Delegation for per-run calendar export buttons
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".add-to-cal-btn");
+    if (!btn) return;
+    const evIdx = +btn.dataset.evIdx;
+    const runIdx = +btn.dataset.runIdx;
+    const ev = MARATHON_EVENTS[evIdx];
+    const run = ev.runs[runIdx];
+    exportSingleRunICS(ev, run);
+  });
+
+  document.getElementById("export-ics").addEventListener("click", exportICS);
+
+  /* ── Subscribe Modal ──────────────────────────────── */
+
+  const subscribeModal = document.getElementById("subscribe-modal");
+  const subscribeBtn = document.getElementById("subscribe-btn");
+  const subscribeClose = document.getElementById("subscribe-close");
+
+  function getIcsUrl() {
+    // Build the full URL to calendar.ics based on current page location
+    const base = window.location.href.replace(/\/[^/]*$/, "");
+    return `${base}/calendar.ics`;
+  }
+
+  function openSubscribeModal() {
+    const icsUrl = getIcsUrl();
+    const webcalUrl = icsUrl.replace(/^https?:/, "webcal:");
+
+    // Set webcal link
+    document.getElementById("webcal-link").href = webcalUrl;
+
+    // Populate all URL fields
+    document.getElementById("gcal-url").value = icsUrl;
+    document.getElementById("outlook-url").value = icsUrl;
+    document.getElementById("other-url").value = icsUrl;
+
+    subscribeModal.classList.remove("hidden");
+  }
+
+  subscribeBtn.addEventListener("click", openSubscribeModal);
+  subscribeClose.addEventListener("click", () => subscribeModal.classList.add("hidden"));
+  subscribeModal.addEventListener("click", (e) => {
+    if (e.target === subscribeModal) subscribeModal.classList.add("hidden");
+  });
+
+  // Copy-to-clipboard buttons
+  document.addEventListener("click", (e) => {
+    const copyBtn = e.target.closest(".copy-url-btn");
+    if (!copyBtn) return;
+    const input = document.getElementById(copyBtn.dataset.target);
+    navigator.clipboard.writeText(input.value).then(() => {
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = "✅ Copied!";
+      setTimeout(() => { copyBtn.textContent = orig; }, 1500);
+    });
+  });
+
+  /* ── Admin Auth ───────────────────────────────────── */
+  const ADMIN_PASSWORD = "pbb8";
+  const ADMIN_STORAGE_KEY = "speedrun-admin-auth";
+
+  function isAdmin() {
+    return localStorage.getItem(ADMIN_STORAGE_KEY) === "true";
+  }
+
+  function setAdminMode(enabled) {
+    const adminBtn = document.getElementById("admin-toggle");
+    if (enabled) {
+      document.body.classList.add("admin-mode");
+      localStorage.setItem(ADMIN_STORAGE_KEY, "true");
+      adminBtn.textContent = "\uD83D\uDD13";
+      adminBtn.title = "Admin mode active \u2014 click to lock";
+    } else {
+      document.body.classList.remove("admin-mode");
+      localStorage.removeItem(ADMIN_STORAGE_KEY);
+      adminBtn.textContent = "\uD83D\uDD12";
+      adminBtn.title = "Unlock admin mode";
+    }
+  }
+
+  document.getElementById("admin-toggle").addEventListener("click", () => {
+    if (isAdmin()) {
+      setAdminMode(false);
+    } else {
+      const pw = prompt("Enter admin password:");
+      if (pw === ADMIN_PASSWORD) {
+        setAdminMode(true);
+      } else if (pw !== null) {
+        alert("Incorrect password.");
+      }
+    }
+  });
+
+  // Restore admin state on load
+  if (isAdmin()) {
+    setAdminMode(true);
+  }
+
+  /* ── Next Up Banner ───────────────────────────────── */
+
+  function renderNextUp() {
+    const nextUpEl = document.getElementById("next-up");
+    const now = new Date();
+    let nextRun = null;
+    let nextEv = null;
+
+    for (const ev of MARATHON_EVENTS) {
+      for (const run of ev.runs || []) {
+        const runDate = new Date(run.date);
+        if (runDate > now && (!nextRun || runDate < new Date(nextRun.date))) {
+          nextRun = run;
+          nextEv = ev;
+        }
+      }
+    }
+
+    if (!nextRun) {
+      nextUpEl.classList.add("hidden");
+      return;
+    }
+
+    const runDate = new Date(nextRun.date);
+    const diff = runDate - now;
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+
+    let countdown = "";
+    if (days > 0) countdown += `${days}d `;
+    if (hours > 0 || days > 0) countdown += `${hours}h `;
+    countdown += `${mins}m`;
+
+    const evIdx = MARATHON_EVENTS.indexOf(nextEv);
+    const runIdx = nextEv.runs.indexOf(nextRun);
+
+    nextUpEl.innerHTML = `
+      <span class="next-up-label">Next Up</span>
+      <span class="next-up-game">${nextRun.game}</span>
+      <span class="next-up-marathon">${nextEv.name}</span>
+      <span class="next-up-time">${fmtShortDate(runDate)} ${fmtTime(runDate)}</span>
+      <span class="next-up-countdown">in ${countdown}</span>
+      <div class="next-up-actions">
+        ${nextEv.twitch ? `<a class="next-up-watch" href="https://twitch.tv/${nextEv.twitch}" target="_blank" rel="noopener">📺 Watch</a>` : ""}
+        <button class="add-to-cal-btn next-up-cal" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">📅 Add to Calendar</button>
+      </div>
+    `;
+    nextUpEl.classList.remove("hidden");
+  }
+
+  /* ── Init ─────────────────────────────────────────── */
+  tzLabel.textContent = userTZ.replace(/_/g, " ");
+  renderNextUp();
+  // Update countdown every minute
+  setInterval(renderNextUp, 60000);
+  renderMonth();
+  renderUpcoming();
+})();
