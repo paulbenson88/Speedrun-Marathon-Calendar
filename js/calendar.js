@@ -207,7 +207,7 @@
                 <span class="run-time">${fmtShortDate(runDate)} ${fmtTime(runDate)} <span class="tz-note">(shown in your local timezone)</span></span>
               </div>
               <div class="run-actions">
-                <button class="add-to-cal-btn" data-ev-idx="${evIdx}" data-run-idx="${runs.indexOf(run)}">📅</button>
+                ${calDropdownHTML(evIdx, runs.indexOf(run))}
                 <button class="commentator-btn ${badgeClass}" data-event="${commKey}">🎙️ Commentators <span class="comm-badge">${badgeText}</span></button>
               </div>
             </div>
@@ -377,7 +377,7 @@
               <span class="run-time">${fmtShortDate(runDate)} ${fmtTime(runDate)} <span class="tz-note">(shown in your local timezone)</span></span>
             </div>
             <div class="run-actions">
-              <button class="add-to-cal-btn" data-ev-idx="${evIdx}" data-run-idx="${runs.indexOf(run)}">📅</button>
+              ${calDropdownHTML(evIdx, runs.indexOf(run))}
               <button class="commentator-btn ${badgeClass}" data-event="${commKey}">🎙️ <span class="comm-badge">${badgeText}</span></button>
             </div>
           </div>
@@ -649,7 +649,7 @@
       <span class="next-up-countdown">in ${countdown}</span>
       <div class="next-up-actions">
         ${nextEv.twitch ? `<a class="next-up-watch" href="https://twitch.tv/${nextEv.twitch}" target="_blank" rel="noopener">📺 Watch</a>` : ""}
-        <button class="add-to-cal-btn next-up-cal" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">📅 Add to Calendar</button>
+        ${calDropdownHTML(evIdx, runIdx)}
       </div>
     `;
     nextUpEl.classList.remove("hidden");

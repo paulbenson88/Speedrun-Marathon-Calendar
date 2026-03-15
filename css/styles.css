@@ -682,6 +682,12 @@ footer {
   flex-shrink: 0;
 }
 
+/* ── Calendar Dropdown ───────────────────────────────── */
+.cal-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .add-to-cal-btn {
   display: inline-flex;
   align-items: center;
@@ -699,6 +705,46 @@ footer {
 .add-to-cal-btn:hover {
   background: var(--card);
   border-color: var(--accent);
+}
+
+.cal-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  min-width: 180px;
+  overflow: hidden;
+  animation: fadeIn 0.15s ease;
+}
+
+.cal-dropdown-wrap.open .cal-dropdown {
+  display: block;
+}
+
+.cal-dropdown-item {
+  display: block;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
+}
+
+.cal-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.cal-dropdown-item:hover {
+  background: var(--surface);
+  color: var(--accent);
 }
 
 .comm-badge {
