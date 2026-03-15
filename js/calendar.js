@@ -556,7 +556,7 @@
           <button class="cal-dropdown-item" data-service="google" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">Google Calendar</button>
           <button class="cal-dropdown-item" data-service="outlook" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">Outlook.com</button>
           <button class="cal-dropdown-item" data-service="yahoo" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">Yahoo Calendar</button>
-          <button class="cal-dropdown-item" data-service="ics" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">Download .ics</button>
+          <button class="cal-dropdown-item" data-service="ics" data-ev-idx="${evIdx}" data-run-idx="${runIdx}">Apple / Other (.ics)</button>
         </div>
       </div>
     `;
