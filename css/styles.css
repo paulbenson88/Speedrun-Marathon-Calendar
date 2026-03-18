@@ -986,6 +986,116 @@ footer {
   75% { transform: translateX(4px); }
 }
 
+/* ── Back Link ────────────────────────────────────────── */
+.back-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* ── Nav Link ────────────────────────────────────────── */
+.nav-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* ── Runs Page ───────────────────────────────────────── */
+.runs-page {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.run-entry {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+}
+
+.run-event-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.run-event-game {
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.runs-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.runs-filter label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.runs-filter select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.runs-filter select:focus {
+  border-color: var(--accent);
+}
+
+.run-event-date {
+  color: var(--accent);
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+}
+
+.embed-wrap {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.embed-wrap iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 600px) {
   .day-cell {
