@@ -360,6 +360,9 @@
       const runs = ev.runs || [];
       for (const run of runs) {
         const runDate = new Date(run.date);
+        const estimateMs = run.estimate ? durationMs(run.estimate) : 0;
+        const runEnd = new Date(runDate.getTime() + estimateMs);
+        if (runEnd < now) continue;
         const commKey = runCommentatorKey(ev.name, run);
         const comms = CommentatorManager.getForEvent(commKey);
         const confirmedCount = comms.filter(c => c.status === "confirmed").length;
