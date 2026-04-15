@@ -1,0 +1,11 @@
+{
+  "name": "speedrun-calendar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate:ics": "node scripts/generate-ics.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.4.0"
+  }
+}

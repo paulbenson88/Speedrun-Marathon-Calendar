@@ -1,0 +1,52 @@
+name: Update Calendar Feeds
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - js/events.js
+      - scripts/generate-ics.mjs
+      - .github/workflows/update-calendars.yml
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-ics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate ICS feeds
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: npm run generate:ics
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- calendar.ics calendar-others.ics; then
+            echo "No feed changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add calendar.ics calendar-others.ics
+          git commit -m "chore: refresh subscribed calendar feeds"
+          git push
