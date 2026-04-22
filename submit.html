@@ -17,10 +17,21 @@
       <a href="runs.html" class="site-tab">Previous Runs</a>
       <a href="submit.html" class="site-tab active">Submit Updates</a>
     </nav>
+    <div class="owner-auth-controls" id="owner-auth-controls">
+      <span id="owner-auth-status" class="owner-auth-status">Owner access required</span>
+      <button id="owner-signin-btn" type="button" class="owner-auth-btn">Sign in</button>
+      <button id="owner-signout-btn" type="button" class="owner-auth-btn hidden">Sign out</button>
+    </div>
     <p class="subtitle">Fill a form and submit directly to this site via Firebase. No code edits needed.</p>
   </header>
 
   <main class="submit-page">
+    <section id="owner-lockout" class="submit-intro-card hidden">
+      <h2>Owner Access Required</h2>
+      <p>Only the configured owner account can submit updates from this page.</p>
+      <p class="submit-help">Sign in with the owner account using the button above.</p>
+    </section>
+
     <section class="submit-intro-card">
       <h2>How this works</h2>
       <ol>
@@ -128,8 +139,10 @@
   </footer>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/owner-auth.js"></script>
   <script src="js/events.js"></script>
   <script src="js/submit.js"></script>
 </body>

@@ -16,9 +16,38 @@
   const importedRunsList = document.getElementById("imported-runs-list");
   const prefillSelectedRunBtn = document.getElementById("prefill-selected-run-btn");
   const vodPlaceholderSelect = document.getElementById("vodPlaceholderSelect");
+  const ownerStatusEl = document.getElementById("owner-auth-status");
+  const ownerSignInBtn = document.getElementById("owner-signin-btn");
+  const ownerSignOutBtn = document.getElementById("owner-signout-btn");
+  const ownerLockout = document.getElementById("owner-lockout");
+  const submitGrid = document.querySelector(".submit-grid");
 
   let importedRuns = [];
   let db = null;
+  let ownerState = { isOwner: false, user: null, ownerConfigured: false, authReady: false };
+
+  function applyOwnerUi(nextState) {
+    ownerState = nextState || ownerState;
+
+    if (ownerStatusEl) {
+      if (!ownerState.ownerConfigured) {
+        ownerStatusEl.textContent = "Owner access not configured yet (set owner email/uid in firebase-config.js).";
+      } else if (ownerState.isOwner) {
+        ownerStatusEl.textContent = `Owner access granted: ${ownerState.user?.email || ownerState.user?.uid || "signed in"}`;
+      } else if (ownerState.user) {
+        ownerStatusEl.textContent = "Signed in, but this account is not owner-approved.";
+      } else {
+        ownerStatusEl.textContent = "Owner access required. Sign in with the owner account.";
+      }
+    }
+
+    if (ownerSignInBtn) ownerSignInBtn.classList.toggle("hidden", ownerState.isOwner);
+    if (ownerSignOutBtn) ownerSignOutBtn.classList.toggle("hidden", !ownerState.user);
+
+    const showForms = Boolean(ownerState.isOwner);
+    if (submitGrid) submitGrid.classList.toggle("hidden", !showForms);
+    if (ownerLockout) ownerLockout.classList.toggle("hidden", showForms);
+  }
 
   function localInputToUtcIso(value) {
     if (!value) return "";
@@ -359,6 +388,11 @@
       event.preventDefault();
       setFeedback(runFeedback, "", "");
 
+      if (!ownerState.isOwner) {
+        setFeedback(runFeedback, "Only the owner account can submit updates.", "error");
+        return;
+      }
+
       const formData = new FormData(runForm);
 
       const localStart = String(formData.get("runDateLocal") || "");
@@ -411,6 +445,11 @@
       event.preventDefault();
       setFeedback(vodFeedback, "", "");
 
+      if (!ownerState.isOwner) {
+        setFeedback(vodFeedback, "Only the owner account can submit updates.", "error");
+        return;
+      }
+
       const formData = new FormData(vodForm);
 
       const payload = {
@@ -440,4 +479,35 @@
 
   db = initializeFirebase();
   loadPlaceholderVods();
+
+  if (ownerSignInBtn && window.SpeedrunOwnerAuth) {
+    ownerSignInBtn.addEventListener("click", async () => {
+      try {
+        await window.SpeedrunOwnerAuth.signInWithGoogle();
+      } catch (err) {
+        setFeedback(runFeedback, `Sign in failed. ${err && err.message ? err.message : ""}`.trim(), "error");
+      }
+    });
+  }
+
+  if (ownerSignOutBtn && window.SpeedrunOwnerAuth) {
+    ownerSignOutBtn.addEventListener("click", async () => {
+      try {
+        await window.SpeedrunOwnerAuth.signOut();
+      } catch (err) {
+        setFeedback(runFeedback, `Sign out failed. ${err && err.message ? err.message : ""}`.trim(), "error");
+      }
+    });
+  }
+
+  if (window.SpeedrunOwnerAuth) {
+    window.SpeedrunOwnerAuth.onChange((state) => {
+      applyOwnerUi(state);
+    });
+    window.SpeedrunOwnerAuth.ready.then(() => {
+      applyOwnerUi(window.SpeedrunOwnerAuth.getState());
+    });
+  } else {
+    applyOwnerUi(ownerState);
+  }
 })();

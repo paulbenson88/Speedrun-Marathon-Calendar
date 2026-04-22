@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner() {
+      return request.auth != null && (
+        request.auth.uid in [
+          // Put your owner UID(s) here.
+          ""
+        ] ||
+        request.auth.token.email in [
+          // Put your owner email(s) here (lowercase).
+          ""
+        ]
+      );
+    }
+
+    match /runSubmissions/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isOwner();
+    }
+
+    match /vodSubmissions/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isOwner();
+    }
+  }
+}

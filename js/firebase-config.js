@@ -11,3 +11,15 @@ window.FIREBASE_CONFIG = {
   appId: "1:529238397970:web:d387d454be7901170034cb",
   measurementId: "G-E374EH6FEH"
 };
+
+// Owner accounts that can edit VODs and access Submit Updates across devices.
+// Use one or both lists below.
+// Example: window.FIREBASE_OWNER_EMAILS = ["you@gmail.com"];
+// Example: window.FIREBASE_OWNER_UIDS = ["firebase-auth-uid"];
+window.FIREBASE_OWNER_EMAILS = [
+  ""
+];
+
+window.FIREBASE_OWNER_UIDS = [
+  ""
+];

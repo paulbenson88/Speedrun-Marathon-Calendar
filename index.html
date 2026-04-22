@@ -3,42 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pbb8 Speedrun Hub</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <title>Speedrun Marathon Calendar</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <header>
-    <h1>🎮 pbb8 Speedrun Hub</h1>
-    <p class="stream-line"><a href="https://twitch.tv/pbb8" target="_blank" rel="noopener" class="stream-link">twitch.tv/pbb8</a></p>
-    <nav class="site-tabs" aria-label="Primary navigation">
-      <a href="index.html" class="site-tab active">Home</a>
-      <a href="calendar.html" class="site-tab">Calendar</a>
-      <a href="runs.html" class="site-tab">Previous Runs</a>
-      <a href="submit.html" class="site-tab">Submit Updates</a>
-    </nav>
+    <h1>🎮 Speedrun Marathon Calendar</h1>
+    <p class="subtitle">All times shown in your local timezone&nbsp;(<span id="tz-label"></span>)</p>
   </header>
 
-  <main class="landing-page">
-    <section class="landing-hero">
-      <h2>Welcome!</h2>
-      <p>Here you can catch my upcoming marathon runs, watch past speedrun marathon showcases, and catch the stream when I'm live!</p>
-      <div class="landing-cta-row">
-        <a href="submit.html" class="landing-cta">📝 Submit Run / VOD Update</a>
-      </div>
+  <main>
+    <div class="month-nav">
+      <button id="prev-month" aria-label="Previous month">&larr;</button>
+      <h2 id="month-title"></h2>
+      <button id="next-month" aria-label="Next month">&rarr;</button>
+    </div>
 
+    <div class="calendar-grid" id="calendar-grid">
+      <div class="day-header">Sun</div>
+      <div class="day-header">Mon</div>
+      <div class="day-header">Tue</div>
+      <div class="day-header">Wed</div>
+      <div class="day-header">Thu</div>
+      <div class="day-header">Fri</div>
+      <div class="day-header">Sat</div>
+      <!-- day cells injected by JS -->
+    </div>
+
+    <section id="event-details" class="event-details hidden">
+      <h3 id="detail-date"></h3>
+      <ul id="detail-list"></ul>
     </section>
 
-    <section class="stream-panel">
-      <h2>Live Stream: <a href="https://twitch.tv/pbb8" target="_blank" rel="noopener noreferrer">twitch.tv/pbb8</a></h2>
-      <div id="stream-offline" class="stream-offline">
-        <div class="stream-offline-image" role="img" aria-label="Channel currently offline">OFFLINE</div>
-        <p class="stream-panel-note">I'm currently offline. Follow on Twitch and you'll get notified when I go live again.</p>
-        <a class="landing-cta landing-cta-primary follow-btn" href="https://twitch.tv/pbb8" target="_blank" rel="noopener">💜 Follow on Twitch</a>
-      </div>
-      <div class="embed-wrap stream-embed-wrap hidden" id="stream-live-wrap">
-        <div id="live-twitch-embed" class="stream-player-host" aria-label="pbb8 live stream"></div>
-      </div>
+    <section class="upcoming">
+      <h2>Upcoming Marathons</h2>
+      <ul id="upcoming-list"></ul>
     </section>
   </main>
 
@@ -46,50 +45,7 @@
     <p>&copy; 2026 Speedrun Marathon Calendar</p>
   </footer>
 
-  <script>
-    (function () {
-      const liveWrap = document.getElementById('stream-live-wrap');
-      const offlineWrap = document.getElementById('stream-offline');
-      const host = window.location.hostname || 'localhost';
-
-      function showOffline() {
-        liveWrap.classList.add('hidden');
-        offlineWrap.classList.remove('hidden');
-      }
-
-      function showLive() {
-        offlineWrap.classList.add('hidden');
-        liveWrap.classList.remove('hidden');
-      }
-
-      showOffline();
-
-      window.onTwitchEmbedAPIReady = function () {
-        const parentDomains = [host];
-        if (host === 'localhost') parentDomains.push('127.0.0.1');
-        if (host === '127.0.0.1') parentDomains.push('localhost');
-
-        const embed = new Twitch.Embed('live-twitch-embed', {
-          channel: 'pbb8',
-          width: '100%',
-          height: '100%',
-          autoplay: false,
-          parent: parentDomains
-        });
-
-        embed.addEventListener(Twitch.Embed.VIDEO_READY, function () {
-          const player = embed.getPlayer();
-          if (!player) return;
-          player.addEventListener(Twitch.Player.ONLINE, showLive);
-          player.addEventListener(Twitch.Player.OFFLINE, showOffline);
-        });
-      };
-
-      const sdk = document.createElement('script');
-      sdk.src = 'https://embed.twitch.tv/embed/v1.js';
-      sdk.async = true;
-      document.body.appendChild(sdk);
-    })();
-  </script>
+  <script src="js/events.js"></script>
+  <script src="js/calendar.js"></script>
 </body>
 </html>

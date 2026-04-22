@@ -1,8 +1,7 @@
 /**
- * events.js — Speedrun marathon event data with individual runs.
+ * events.js — Speedrun marathon event data.
  *
- * Each marathon stores its start/end in UTC via ISO-8601 strings.
- * Each run stores its scheduled date/time and estimate.
+ * Each event stores its start/end in UTC via ISO-8601 strings.
  * The calendar JS converts them to the viewer's local timezone
  * automatically using the Intl API.
  *
@@ -12,123 +11,57 @@
 // eslint-disable-next-line no-unused-vars
 const MARATHON_EVENTS = [
   {
-    name: "Gamers Against Cancer 2026",
-    start: "2026-03-13T20:00:00Z",
-    end: "2026-03-15T23:47:00Z",
-    twitch: "GFHMarathon",
-    url: "https://oengus.io/marathon/GAC26/schedule/gac26",
-    runs: [
-      {
-        game: "Ollie-Oop",
-        category: "All Missions",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-03-15T15:25:00Z",
-        runId: 51011,
-      },
-    ],
+    name: "Awesome Games Done Quick 2026",
+    start: "2026-01-04T16:30:00Z",
+    end: "2026-01-11T04:00:00Z",
+    description: "Week-long charity speedrun marathon benefiting the Prevent Cancer Foundation.",
   },
   {
-    name: "InstaSpeedathon 2026",
-    start: "2026-03-20T09:00:00Z",
-    end: "2026-03-23T13:55:00Z",
-    twitch: "InstaSpeedathon",
-    url: "https://oengus.io/marathon/ispeed26/schedule/main",
-    runs: [
-      {
-        game: "Ollie-Oop",
-        category: "All Missions",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-03-22T14:55:00Z",
-        runId: 50869,
-      },
-      {
-        game: "Bad Way",
-        category: "Any% (No Torch Zip)",
-        console: "PC",
-        estimate: "PT25M",
-        date: "2026-03-22T15:45:00Z",
-        runId: 50876,
-      },
-    ],
+    name: "European Speedrunner Assembly 2026",
+    start: "2026-02-15T12:00:00Z",
+    end: "2026-02-22T22:00:00Z",
+    description: "Europe's biggest speedrunning marathon, raising money for charity.",
   },
   {
-    name: "Starlight for the Future 2026",
-    start: "2026-03-28T16:00:00Z",
-    end: "2026-03-30T03:56:00Z",
-    twitch: "supersonic_",
-    url: "https://horaro.net/sftf2026/schedule",
-    runs: [
-      {
-        game: "Ollie-Oop",
-        category: "All Missions",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-03-29T19:20:00Z",
-        runId: "sftf2026-ollie-oop",
-      },
-      {
-        game: "Bad Way",
-        category: "Any% No Torch Skip",
-        console: "PC",
-        estimate: "PT25M",
-        date: "2026-03-29T20:05:00Z",
-        runId: "sftf2026-bad-way",
-      },
-    ],
+    name: "Flame Fatales 2026",
+    start: "2026-03-15T17:00:00Z",
+    end: "2026-03-22T03:00:00Z",
+    description: "All-women & non-binary speedrun marathon presented by GDQ.",
   },
   {
-    name: "No Fish 2026",
-    start: "2026-04-11T12:00:00Z",
-    end: "2026-04-12T19:39:00Z",
-    twitch: "Channel734",
-    url: "https://oengus.io/marathon/nofish2026/schedule/1",
-    runs: [
-      {
-        game: "Ollie-Oop",
-        category: "All Missions",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-04-12T14:35:00Z",
-        runId: 51375,
-      },
-    ],
+    name: "Summer Games Done Quick 2026",
+    start: "2026-06-28T16:30:00Z",
+    end: "2026-07-05T04:00:00Z",
+    description: "Annual summer charity marathon benefiting Doctors Without Borders.",
   },
   {
-    name: "Prevent-A-Thon 7",
-    start: "2026-05-01T18:00:00Z",
-    end: "2026-05-02T10:00:00Z",
-    twitch: "",
-    url: "",
-    runs: [
-      {
-        game: "Bad Way",
-        category: "Any% (No Torch Zip)",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-05-02T04:21:00Z",
-        runId: "prevent-a-thon-7-bad-way",
-        runner: "pbb8",
-      },
-    ],
+    name: "RPG Limit Break 2026",
+    start: "2026-05-10T15:00:00Z",
+    end: "2026-05-17T03:00:00Z",
+    description: "Marathon dedicated to RPG speedruns, raising money for NAMI.",
   },
   {
-    name: "Mint-A-Thon",
-    start: "2026-05-17T12:00:00Z",
-    end: "2026-05-17T21:00:00Z",
-    twitch: "",
-    url: "",
-    runs: [
-      {
-        game: "Bad Way",
-        category: "(Any% - No Torch Zip)",
-        console: "PC",
-        estimate: "PT35M",
-        date: "2026-05-17T16:16:00Z",
-        runId: "mint-a-thon-bad-way",
-        runner: "pbb8",
-      },
-    ],
+    name: "GDQ Hotfix — March",
+    start: "2026-03-28T18:00:00Z",
+    end: "2026-03-28T23:00:00Z",
+    description: "One-day online speedrun showcase by GDQ.",
+  },
+  {
+    name: "Questing for Glory 2026",
+    start: "2026-04-20T14:00:00Z",
+    end: "2026-04-27T02:00:00Z",
+    description: "Community marathon supporting Direct Relief.",
+  },
+  {
+    name: "Speedrun Marathon Online — Fall 2026",
+    start: "2026-09-12T16:00:00Z",
+    end: "2026-09-14T04:00:00Z",
+    description: "48-hour online marathon featuring viewer-voted games.",
+  },
+  {
+    name: "Awesome Games Done Quick 2027",
+    start: "2027-01-05T16:30:00Z",
+    end: "2027-01-12T04:00:00Z",
+    description: "The next annual winter AGDQ event.",
   },
 ];
